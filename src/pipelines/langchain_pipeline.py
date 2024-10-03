@@ -4,11 +4,12 @@ import re
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain.callbacks import get_openai_callback
-from langchain.chains import LLMChain, LLMMathChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import OpenAI
+from langchain.chains import LLMMathChain
+from langchain_community.callbacks import get_openai_callback
 from langchain_community.utilities import GoogleSerperAPIWrapper
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import OpenAI
 
 # Create logs directory if it doesn't exist
 log_dir = Path(__file__).parent.parent.parent / "logs"
@@ -44,13 +45,17 @@ def create_llm(api_key):
 def create_pipeline(llm):
     logger.info("Creating pipeline")
     google_search = GoogleSerperAPIWrapper()
-    math_chain = LLMMathChain(llm=llm)
+
+    # Use the from_llm class method to create LLMMathChain
+    math_chain = LLMMathChain.from_llm(llm=llm)
 
     search_prompt = PromptTemplate(
         input_variables=["query"],
         template="Search for information about {query} and provide a concise answer.",
     )
-    search_chain = LLMChain(llm=llm, prompt=search_prompt)
+
+    # Replace LLMChain with RunnableSequence
+    search_chain = search_prompt | llm
 
     logger.info("Pipeline created successfully")
     return google_search, math_chain, search_chain
@@ -64,12 +69,12 @@ def run_pipeline(google_search, math_chain, search_chain, query):
 
         # Step 2: Extract the age using LLM
         age_query = f"How old was {query} when he died?"
-        age_result = search_chain.run(age_query)
+        age_result = search_chain.invoke({"query": age_query})
 
         # Add this part to process the math query
         age = int(re.search(r"\d+", age_result).group())
         math_query = f"What is {age} raised to the 0.25 power?"
-        math_result = math_chain.run(math_query)
+        math_result = math_chain.invoke(math_query)
 
         logger.info(f"Total Tokens: {cb.total_tokens}")
         logger.info(f"Prompt Tokens: {cb.prompt_tokens}")
