@@ -1,11 +1,6 @@
 import pytest
 
-from src.agents.langchain_react import (
-    create_agent,
-    create_llm,
-    load_environment,
-    run_query,
-)
+from agents.langchain_react import create_agent, create_llm, load_environment, run_query
 
 
 def test_query_results():

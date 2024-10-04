@@ -1,3 +1,27 @@
+"""
+langchain_pipeline.py
+
+This module provides functionality to create and run a pipeline that utilizes
+OpenAI's language model and Google search capabilities to answer queries about
+historical figures, specifically their ages and related mathematical computations.
+
+Modules:
+- logging: For logging information and errors.
+- os: For interacting with the operating system.
+- re: For regular expression operations.
+- pathlib: For handling filesystem paths.
+- dotenv: For loading environment variables from a .env file.
+- langchain: For utilizing language model chains and utilities.
+
+Functions:
+- load_environment: Loads environment variables and retrieves the OpenAI API key.
+- create_llm: Creates an instance of the OpenAI language model.
+- create_pipeline: Constructs the pipeline using the language model and search utilities.
+- run_pipeline: Executes the pipeline for a given query and returns the result.
+- main: The main entry point of the script that orchestrates the loading of the environment,
+  creation of the LLM, and execution of the pipeline.
+"""
+
 import logging
 import os
 import re
@@ -27,22 +51,49 @@ logger = logging.getLogger(__name__)
 
 
 def load_environment():
+    """
+    Load environment variables from a .env file and retrieve the OpenAI API key.
+
+    Returns:
+        str: The OpenAI API key.
+
+    Raises:
+        ValueError: If the OpenAI API key is not found in the environment variables.
+    """
     logger.info("Loading environment variables")
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         logger.error("OpenAI API key not found in environment variables")
-        raise ValueError("OpenAI API key not found in environment variables")
+        raise ValueError("OpenAI API key not found in environment variables.")
     logger.info("Environment variables loaded successfully")
     return api_key
 
 
 def create_llm(api_key):
+    """
+    Create an instance of the OpenAI language model.
+
+    Args:
+        api_key (str): The OpenAI API key.
+
+    Returns:
+        OpenAI: An instance of the OpenAI language model.
+    """
     logger.info("Creating LLM instance")
     return OpenAI(api_key=api_key, model_name="gpt-3.5-turbo-instruct", temperature=0)
 
 
 def create_pipeline(llm):
+    """
+    Create the pipeline using the provided language model and search utilities.
+
+    Args:
+        llm (OpenAI): The OpenAI language model instance.
+
+    Returns:
+        tuple: A tuple containing the Google search utility, math chain, and search chain.
+    """
     logger.info("Creating pipeline")
     google_search = GoogleSerperAPIWrapper()
 
@@ -62,6 +113,18 @@ def create_pipeline(llm):
 
 
 def run_pipeline(google_search, math_chain, search_chain, query):
+    """
+    Execute the pipeline for a given query and return the result.
+
+    Args:
+        google_search (GoogleSerperAPIWrapper): The Google search utility.
+        math_chain (LLMMathChain): The math chain for computations.
+        search_chain (RunnableSequence): The search chain for processing queries.
+        query (str): The query to be processed.
+
+    Returns:
+        str: The result of the pipeline execution, including the age and mathematical computation.
+    """
     logger.info(f"Running pipeline for query: {query}")
     with get_openai_callback() as cb:
         # Step 1: Search for Van Gogh's age
