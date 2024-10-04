@@ -1,6 +1,6 @@
 import pytest
 
-from agents.hello import sum_numbers
+from lab.hello import sum_numbers
 
 
 def test_sum_numbers():
